@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fast offline-ready IPM repository for Nigerian maize, rice, and cowpea pests">
+    <title>IPM Repository Nigeria</title>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+}
+header {
+    background: #2e7d32;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+header h1 {
+    font-size: 1.8rem;
+}
+.search-section {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    flex-wrap: wrap;
+}
+.search-section input,
+.search-section select {
+    padding: 10px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+.pest-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-3px);
+}
+.card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: #eee;
+}
+.card-content {
+    padding: 15px;
+}
+.card-content h2 {
+    color: #2e7d32;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+.card-content p {
+    margin-bottom: 8px;
+}
+.message {
+    text-align: center;
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+    padding: 40px 0;
+    color: #555;
+}
+footer {
+    text-align: center;
+    background: #2e7d32;
+    color: white;
+    padding: 15px;
+    margin-top: 20px;
+}
+@media(max-width: 768px) {
+    .search-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    .search-section input,
+    .search-section select {
+        width: 90%;
+    }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Integrated Pest Management Repository</h1>
+    <p>Nigerian Agriculture Pest Information System</p>
+</header>
+
+<main>
+    <section class="search-section">
+        <input type="text" id="searchInput" placeholder="Search pests..." aria-label="Search pests">
+        <select id="cropFilter" aria-label="Filter by crop">
+            <option value="all">All Crops</option>
+            <option value="Maize">Maize</option>
+            <option value="Rice">Rice</option>
+            <option value="Cowpea">Cowpea</option>
+        </select>
+    </section>
+
+    <section id="pestContainer" class="pest-container" aria-live="polite">
+    </section>
+</main>
+
+<footer>
+    <p>© 2025 IPM Repository Project</p>
+</footer>
+
+<script>
+const pestContainer = document.getElementById("pestContainer");
+const searchInput = document.getElementById("searchInput");
+const cropFilter = document.getElementById("cropFilter");
+let pests = [];
+let debounceTimer;
+const FALLBACK_IMG = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3e%3crect fill='%23eee' width='300' height='200'/%3e%3ctext fill='%23666' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e";
+
+async function loadPests() {
+    pestContainer.innerHTML = '<p class="message">Loading pests...</p>';
+    try {
+        const response = await fetch("pests.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        pests = await response.json();
+        displayPests(pests);
+    } catch (err) {
+        pestContainer.innerHTML = '<p class="message">Error loading pests. Check that pests.json exists in the same folder.</p>';
+        console.error("Load error:", err);
+    }
+}
+
+function displayPests(data) {
+    pestContainer.innerHTML = "";
+    if (!data.length) {
+        pestContainer.innerHTML = '<p class="message">No pest found.</p>';
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    data.forEach(pest => {
+        const card = document.createElement("article");
+        card.classList.add("card");
+        card.innerHTML = `
+            <img src="${pest.image}" alt="${pest.name}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
+            <div class="card-content">
+                <h2>${pest.name}</h2>
+                <p><strong>Crop:</strong> ${pest.crop}</p>
+                <p><strong>Symptoms:</strong> ${pest.symptoms}</p>
+                <p><strong>IPM Control:</strong> ${pest.control}</p>
+            </div>
+        `;
+        fragment.appendChild(card);
+    });
+    pestContainer.appendChild(fragment);
+}
+
+function filterPests() {
+    const searchText = searchInput.value.trim().toLowerCase();
+    const selectedCrop = cropFilter.value;
+
+    const filtered = pests.filter(pest => {
+        const matchesSearch = !searchText || 
+            pest.name.toLowerCase().includes(searchText) ||
+            pest.symptoms.toLowerCase().includes(searchText) ||
+            pest.control.toLowerCase().includes(searchText);
+        const matchesCrop = selectedCrop === "all" || pest.crop === selectedCrop;
+        return matchesSearch && matchesCrop;
+    });
+    displayPests(filtered);
+}
+
+searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(filterPests, 250);
+});
+cropFilter.addEventListener("change", filterPests);
+
+loadPests();
+</script>
+</body>
+</html>

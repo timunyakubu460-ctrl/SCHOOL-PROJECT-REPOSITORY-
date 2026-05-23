@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Fall Armyworm",
+    "crop": "Maize",
+    "symptoms": "Leaves develop holes and feeding damage.",
+    "control": "Use crop rotation, resistant varieties, and biological control.",
+    "image": "images/fall-armyworm.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Rice Stem Borer",
+    "crop": "Rice",
+    "symptoms": "Dead hearts and white heads appear on rice plants.",
+    "control": "Early planting and field sanitation are recommended.",
+    "image": "images/rice-stem-borer.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Cowpea Aphid",
+    "crop": "Cowpea",
+    "symptoms": "Leaves curl and become yellow.",
+    "control": "Apply neem extract and encourage natural predators.",
+    "image": "images/cowpea-aphid.jpg"
+  }
+]
